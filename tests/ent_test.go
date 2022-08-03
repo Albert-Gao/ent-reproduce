@@ -52,7 +52,7 @@ func TestUserShouldBeAbleToGetAllSelfData(t *testing.T) {
 	assert.Equal(t, qUser2.Edges.Profiles[1].ID, profile2.ID)
 }
 
-func TestUserShouldNotBeAbleToGetNonSameTenantData1(t *testing.T) {
+func TestUserShouldNotBeAbleToGetNonSameTenantProfiles(t *testing.T) {
 	ent := GetEntTestClient(t)
 	defer ent.Close()
 
@@ -82,7 +82,7 @@ func TestUserShouldNotBeAbleToGetNonSameTenantData1(t *testing.T) {
 	assert.Equal(t, user2Got1.Edges.Profiles[0].ID, profile3.ID)
 }
 
-func TestUserShouldNotBeAbleToGetNonSameTenantData2(t *testing.T) {
+func TestUserShouldNotBeAbleToGetNonSameTenantTenants(t *testing.T) {
 	ent := GetEntTestClient(t)
 	defer ent.Close()
 
