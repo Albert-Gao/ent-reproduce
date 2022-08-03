@@ -1,6 +1,10 @@
 # [ent](https://entgo.io/) - reproduce
 
-> For querying, FilterProfileRule works on user.profiles, but the similar FilterTenantRule does NOT work on user.tenants
+This repo connectes to this [issue](https://github.com/ent/ent/issues/2827)
+
+## The issue
+
+> In short, it's the FilterFunc works for user.profiles but NOT triggering at all for user.tenants.
 
 ## Structure
 
