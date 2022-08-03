@@ -33,7 +33,7 @@ func TestUserShouldNotBeAbleToGetNonSameTenantProfiles(t *testing.T) {
 
 	// user1 -> tenant1 || user2 -> tenant1 and tenant2
 	// when user1 tries to get user2,
-	// user1 should only get user2.profile (which links to tenant1)
+	// user1 should only get user2.profile3 (which links to tenant1)
 	user2Got1 := ent.User.Query().Where(user.ID(user2.ID)).WithProfiles().OnlyX(user1Ctx)
 	assert.Len(t, user2Got1.Edges.Profiles, 1)
 	assert.Equal(t, user2Got1.Edges.Profiles[0].ID, profile3.ID)
@@ -63,7 +63,7 @@ func TestUserShouldNotBeAbleToGetNonSameTenantTenants(t *testing.T) {
 
 	// user1 -> tenant1 || user2 -> tenant1 and tenant2
 	// when user1 tries to get user2,
-	// user1 should only get user2.tenants (which links to tenant1)
+	// user1 should only get user2.tenant1 (which links to tenant1)
 	user2Got1 := ent.User.Query().Where(user.ID(user2.ID)).WithTenants().OnlyX(user1Ctx)
 	assert.Len(t, user2Got1.Edges.Tenants, 1)
 	assert.Equal(t, user2Got1.Edges.Tenants[0].ID, tenant1.ID)
