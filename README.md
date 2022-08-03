@@ -4,8 +4,12 @@
 
 ## Structure
 
-- ent/schema : all ent schemas
-- ent/rules : all ent privacy rules
+- ent:<br/>
+  --schema: all ent schemas<br/>
+  --rules: all ent privacy rules
+
+- entgen: ent generated code
+- tests: golang tests for reproducing the issue
 
 ## How to reproduce
 
