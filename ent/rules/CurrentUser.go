@@ -6,9 +6,13 @@ import (
 )
 
 type CurrentUser struct {
-	UserId          string
+	UserId string
+
+	// the current active tenant
 	CurrentTenantId string
-	TenantIds       []string
+
+	// all tenants the user joins
+	TenantIds []string
 }
 
 func GetCurrentUserFromContext(c context.Context) (CurrentUser, error) {

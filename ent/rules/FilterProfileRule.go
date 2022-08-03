@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"enttry/entgen/privacy"
+	"enttry/entgen/profile"
 
 	"entgo.io/ent/entql"
 )
@@ -27,7 +28,7 @@ func stringSliceToInterfaceSlice(stringSlice []string) []interface{} {
 
  ownerIdFieldName is the owner of the entity, for profile, it's owner_id, for task, it's creator_id
 */
-func FilterTenantIdRule(ownerIdFieldName string) privacy.QueryRule {
+func FilterProfileRule() privacy.QueryRule {
 	// ProfileFilter is an interface to wrap Where()
 	// predicate that is used by `Profile` schema.
 	type WhereFilter interface {
@@ -45,25 +46,10 @@ func FilterTenantIdRule(ownerIdFieldName string) privacy.QueryRule {
 			return privacy.Denyf("unexpected filter type %T", f)
 		}
 
-		ids := stringSliceToInterfaceSlice(currentUser.TenantIds)
-
-		if currentUser.CurrentTenantId != "" {
-			tf.Where(entql.Or(
-				entql.FieldEQ(ownerIdFieldName, currentUser.UserId),
-				entql.FieldEQ("tenant_id", currentUser.CurrentTenantId),
-			))
-		} else {
-			/*
-				Rationale:
-				just because userA is querying userB in tenantC,
-				ent should not return userB in tenantD even userA can see it.
-				this leads to return extra data, but we need this for testing
-
-				also, it ONLY works when calling ent directly
-				in production, it won't work since ValidateCurrentUser() would make sure x-tenant-id is set
-			*/
-			tf.Where(entql.FieldIn("tenant_id", ids...))
-		}
+		tf.Where(entql.Or(
+			entql.FieldEQ(profile.FieldOwnerID, currentUser.UserId),
+			entql.FieldEQ(profile.FieldTenantID, currentUser.CurrentTenantId),
+		))
 
 		// Skip to the next rules (equivalent to return nil).
 		return privacy.Skip

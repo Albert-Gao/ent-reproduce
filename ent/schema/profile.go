@@ -48,7 +48,7 @@ func (Profile) Edges() []ent.Edge {
 func (Profile) Policy() ent.Policy {
 	return privacy.Policy{
 		Query: privacy.QueryPolicy{
-			rules.FilterTenantIdRule("owner_id"),
+			rules.FilterProfileRule(),
 		},
 	}
 }

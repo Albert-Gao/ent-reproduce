@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"enttry/entgen/privacy"
+	"enttry/entgen/tenant"
 
 	"entgo.io/ent/entql"
 )
@@ -26,7 +27,8 @@ func FilterTenantRule() privacy.QueryMutationRule {
 
 		ids := stringSliceToInterfaceSlice(currentUser.TenantIds)
 
-		tf.Where(entql.FieldIn("id", ids...))
+		// we return a tenant as along as the user joins this tenant
+		tf.Where(entql.FieldIn(tenant.FieldID, ids...))
 
 		// Skip to the next rules (equivalent to return nil).
 		return privacy.Skip
