@@ -7,12 +7,10 @@ import (
 	"entgo.io/ent/schema/mixin"
 )
 
-// User holds the schema definition for the User entity.
 type User struct {
 	ent.Schema
 }
 
-// Fields of the User.
 func (User) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("id").Unique(),
@@ -21,7 +19,6 @@ func (User) Fields() []ent.Field {
 	}
 }
 
-// Edges of the User.
 func (User) Edges() []ent.Edge {
 	return []ent.Edge{
 		// User-to-Profile, O2M - O2O
@@ -32,7 +29,6 @@ func (User) Edges() []ent.Edge {
 	}
 }
 
-// Mixins of the User
 func (User) Mixin() []ent.Mixin {
 	return []ent.Mixin{
 		mixin.Time{},

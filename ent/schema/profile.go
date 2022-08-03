@@ -11,19 +11,16 @@ import (
 	"entgo.io/ent/schema/mixin"
 )
 
-// Profile holds the schema definition for the Profile entity.
 type Profile struct {
 	ent.Schema
 }
 
-// Indexes of the Profile.
 func (Profile) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("owner_id", "tenant_id"),
 	}
 }
 
-// Fields of the Profile.
 func (Profile) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("id").Unique(),
@@ -58,11 +55,3 @@ func (Profile) Mixin() []ent.Mixin {
 		mixin.Time{},
 	}
 }
-
-// Annotations returns Todo annotations.
-//func (Profile) Annotations() []schema.Annotation {
-//	return []schema.Annotation{
-//		entgql.RelayConnection(),
-//		entgql.QueryField(),
-//	}
-//}
