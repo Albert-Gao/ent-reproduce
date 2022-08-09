@@ -257,8 +257,7 @@ func (c *ProfileClient) QueryTenant(pr *Profile) *TenantQuery {
 
 // Hooks returns the client hooks.
 func (c *ProfileClient) Hooks() []Hook {
-	hooks := c.hooks.Profile
-	return append(hooks[:len(hooks):len(hooks)], profile.Hooks[:]...)
+	return c.hooks.Profile
 }
 
 // TenantClient is a client for the Tenant schema.
@@ -380,8 +379,7 @@ func (c *TenantClient) QueryMemberProfiles(t *Tenant) *ProfileQuery {
 
 // Hooks returns the client hooks.
 func (c *TenantClient) Hooks() []Hook {
-	hooks := c.hooks.Tenant
-	return append(hooks[:len(hooks):len(hooks)], tenant.Hooks[:]...)
+	return c.hooks.Tenant
 }
 
 // UserClient is a client for the User schema.

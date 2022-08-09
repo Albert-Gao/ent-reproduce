@@ -8,7 +8,6 @@ import (
 	"enttry/entgen/profile"
 	"enttry/entgen/tenant"
 	"enttry/entgen/user"
-	"errors"
 	"fmt"
 	"math"
 
@@ -28,6 +27,8 @@ type ProfileQuery struct {
 	predicates []predicate.Profile
 	withOwner  *UserQuery
 	withTenant *TenantQuery
+	modifiers  []func(*sql.Selector)
+	loadTotal  []func(context.Context, []*Profile) error
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -383,12 +384,6 @@ func (pq *ProfileQuery) prepareQuery(ctx context.Context) error {
 		}
 		pq.sql = prev
 	}
-	if profile.Policy == nil {
-		return errors.New("entgen: uninitialized profile.Policy (forgotten import entgen/runtime?)")
-	}
-	if err := profile.Policy.EvalQuery(ctx, pq); err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -410,6 +405,9 @@ func (pq *ProfileQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Prof
 		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
+	if len(pq.modifiers) > 0 {
+		_spec.Modifiers = pq.modifiers
+	}
 	for i := range hooks {
 		hooks[i](ctx, _spec)
 	}
@@ -428,6 +426,11 @@ func (pq *ProfileQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Prof
 	if query := pq.withTenant; query != nil {
 		if err := pq.loadTenant(ctx, query, nodes, nil,
 			func(n *Profile, e *Tenant) { n.Edges.Tenant = e }); err != nil {
+			return nil, err
+		}
+	}
+	for i := range pq.loadTotal {
+		if err := pq.loadTotal[i](ctx, nodes); err != nil {
 			return nil, err
 		}
 	}
@@ -489,6 +492,9 @@ func (pq *ProfileQuery) loadTenant(ctx context.Context, query *TenantQuery, node
 
 func (pq *ProfileQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := pq.querySpec()
+	if len(pq.modifiers) > 0 {
+		_spec.Modifiers = pq.modifiers
+	}
 	_spec.Node.Columns = pq.fields
 	if len(pq.fields) > 0 {
 		_spec.Unique = pq.unique != nil && *pq.unique

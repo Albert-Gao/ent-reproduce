@@ -1,7 +1,9 @@
 package schema
 
 import (
+	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
+	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/mixin"
@@ -22,10 +24,22 @@ func (User) Fields() []ent.Field {
 func (User) Edges() []ent.Edge {
 	return []ent.Edge{
 		// User-to-Profile, O2M - O2O
-		edge.To("profiles", Profile.Type),
+		edge.To("profiles", Profile.Type).Annotations(
+			entgql.RelayConnection(),
+		),
 
 		// User-to-Organization, M2M - M2M
 		edge.To("tenants", Tenant.Type).Required(),
+	}
+}
+
+func (User) Annotations() []schema.Annotation {
+	return []schema.Annotation{
+		entgql.RelayConnection(),
+		entgql.Mutations(
+			entgql.MutationCreate(),
+			entgql.MutationUpdate(),
+		),
 	}
 }
 

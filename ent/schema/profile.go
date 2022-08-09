@@ -1,10 +1,9 @@
 package schema
 
 import (
-	"enttry/ent/rules"
-	"enttry/entgen/privacy"
-
+	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
+	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -42,11 +41,13 @@ func (Profile) Edges() []ent.Edge {
 	}
 }
 
-func (Profile) Policy() ent.Policy {
-	return privacy.Policy{
-		Query: privacy.QueryPolicy{
-			rules.FilterProfileRule(),
-		},
+func (Profile) Annotations() []schema.Annotation {
+	return []schema.Annotation{
+		entgql.RelayConnection(),
+		entgql.Mutations(
+			entgql.MutationCreate(),
+			entgql.MutationUpdate(),
+		),
 	}
 }
 

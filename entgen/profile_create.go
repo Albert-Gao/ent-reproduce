@@ -95,9 +95,7 @@ func (pc *ProfileCreate) Save(ctx context.Context) (*Profile, error) {
 		err  error
 		node *Profile
 	)
-	if err := pc.defaults(); err != nil {
-		return nil, err
-	}
+	pc.defaults()
 	if len(pc.hooks) == 0 {
 		if err = pc.check(); err != nil {
 			return nil, err
@@ -162,22 +160,15 @@ func (pc *ProfileCreate) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (pc *ProfileCreate) defaults() error {
+func (pc *ProfileCreate) defaults() {
 	if _, ok := pc.mutation.CreateTime(); !ok {
-		if profile.DefaultCreateTime == nil {
-			return fmt.Errorf("entgen: uninitialized profile.DefaultCreateTime (forgotten import entgen/runtime?)")
-		}
 		v := profile.DefaultCreateTime()
 		pc.mutation.SetCreateTime(v)
 	}
 	if _, ok := pc.mutation.UpdateTime(); !ok {
-		if profile.DefaultUpdateTime == nil {
-			return fmt.Errorf("entgen: uninitialized profile.DefaultUpdateTime (forgotten import entgen/runtime?)")
-		}
 		v := profile.DefaultUpdateTime()
 		pc.mutation.SetUpdateTime(v)
 	}
-	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.

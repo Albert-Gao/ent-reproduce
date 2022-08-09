@@ -87,9 +87,7 @@ func (pu *ProfileUpdate) Save(ctx context.Context) (int, error) {
 		err      error
 		affected int
 	)
-	if err := pu.defaults(); err != nil {
-		return 0, err
-	}
+	pu.defaults()
 	if len(pu.hooks) == 0 {
 		if err = pu.check(); err != nil {
 			return 0, err
@@ -145,15 +143,11 @@ func (pu *ProfileUpdate) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (pu *ProfileUpdate) defaults() error {
+func (pu *ProfileUpdate) defaults() {
 	if _, ok := pu.mutation.UpdateTime(); !ok {
-		if profile.UpdateDefaultUpdateTime == nil {
-			return fmt.Errorf("entgen: uninitialized profile.UpdateDefaultUpdateTime (forgotten import entgen/runtime?)")
-		}
 		v := profile.UpdateDefaultUpdateTime()
 		pu.mutation.SetUpdateTime(v)
 	}
-	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -357,9 +351,7 @@ func (puo *ProfileUpdateOne) Save(ctx context.Context) (*Profile, error) {
 		err  error
 		node *Profile
 	)
-	if err := puo.defaults(); err != nil {
-		return nil, err
-	}
+	puo.defaults()
 	if len(puo.hooks) == 0 {
 		if err = puo.check(); err != nil {
 			return nil, err
@@ -421,15 +413,11 @@ func (puo *ProfileUpdateOne) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (puo *ProfileUpdateOne) defaults() error {
+func (puo *ProfileUpdateOne) defaults() {
 	if _, ok := puo.mutation.UpdateTime(); !ok {
-		if profile.UpdateDefaultUpdateTime == nil {
-			return fmt.Errorf("entgen: uninitialized profile.UpdateDefaultUpdateTime (forgotten import entgen/runtime?)")
-		}
 		v := profile.UpdateDefaultUpdateTime()
 		puo.mutation.SetUpdateTime(v)
 	}
-	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.

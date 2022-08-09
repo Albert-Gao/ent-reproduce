@@ -2,4 +2,83 @@
 
 package entgen
 
-// The schema-stitching logic is generated in enttry/entgen/runtime/runtime.go
+import (
+	"enttry/ent/schema"
+	"enttry/entgen/profile"
+	"enttry/entgen/tenant"
+	"enttry/entgen/user"
+	"time"
+)
+
+// The init function reads all schema descriptors with runtime code
+// (default values, validators, hooks and policies) and stitches it
+// to their package variables.
+func init() {
+	profileMixin := schema.Profile{}.Mixin()
+	profileMixinFields0 := profileMixin[0].Fields()
+	_ = profileMixinFields0
+	profileFields := schema.Profile{}.Fields()
+	_ = profileFields
+	// profileDescCreateTime is the schema descriptor for create_time field.
+	profileDescCreateTime := profileMixinFields0[0].Descriptor()
+	// profile.DefaultCreateTime holds the default value on creation for the create_time field.
+	profile.DefaultCreateTime = profileDescCreateTime.Default.(func() time.Time)
+	// profileDescUpdateTime is the schema descriptor for update_time field.
+	profileDescUpdateTime := profileMixinFields0[1].Descriptor()
+	// profile.DefaultUpdateTime holds the default value on creation for the update_time field.
+	profile.DefaultUpdateTime = profileDescUpdateTime.Default.(func() time.Time)
+	// profile.UpdateDefaultUpdateTime holds the default value on update for the update_time field.
+	profile.UpdateDefaultUpdateTime = profileDescUpdateTime.UpdateDefault.(func() time.Time)
+	// profileDescNickName is the schema descriptor for nick_name field.
+	profileDescNickName := profileFields[1].Descriptor()
+	// profile.NickNameValidator is a validator for the "nick_name" field. It is called by the builders before save.
+	profile.NickNameValidator = profileDescNickName.Validators[0].(func(string) error)
+	tenantMixin := schema.Tenant{}.Mixin()
+	tenantMixinFields0 := tenantMixin[0].Fields()
+	_ = tenantMixinFields0
+	tenantFields := schema.Tenant{}.Fields()
+	_ = tenantFields
+	// tenantDescCreateTime is the schema descriptor for create_time field.
+	tenantDescCreateTime := tenantMixinFields0[0].Descriptor()
+	// tenant.DefaultCreateTime holds the default value on creation for the create_time field.
+	tenant.DefaultCreateTime = tenantDescCreateTime.Default.(func() time.Time)
+	// tenantDescUpdateTime is the schema descriptor for update_time field.
+	tenantDescUpdateTime := tenantMixinFields0[1].Descriptor()
+	// tenant.DefaultUpdateTime holds the default value on creation for the update_time field.
+	tenant.DefaultUpdateTime = tenantDescUpdateTime.Default.(func() time.Time)
+	// tenant.UpdateDefaultUpdateTime holds the default value on update for the update_time field.
+	tenant.UpdateDefaultUpdateTime = tenantDescUpdateTime.UpdateDefault.(func() time.Time)
+	// tenantDescName is the schema descriptor for name field.
+	tenantDescName := tenantFields[1].Descriptor()
+	// tenant.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	tenant.NameValidator = func() func(string) error {
+		validators := tenantDescName.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(name string) error {
+			for _, fn := range fns {
+				if err := fn(name); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	userMixin := schema.User{}.Mixin()
+	userMixinFields0 := userMixin[0].Fields()
+	_ = userMixinFields0
+	userFields := schema.User{}.Fields()
+	_ = userFields
+	// userDescCreateTime is the schema descriptor for create_time field.
+	userDescCreateTime := userMixinFields0[0].Descriptor()
+	// user.DefaultCreateTime holds the default value on creation for the create_time field.
+	user.DefaultCreateTime = userDescCreateTime.Default.(func() time.Time)
+	// userDescUpdateTime is the schema descriptor for update_time field.
+	userDescUpdateTime := userMixinFields0[1].Descriptor()
+	// user.DefaultUpdateTime holds the default value on creation for the update_time field.
+	user.DefaultUpdateTime = userDescUpdateTime.Default.(func() time.Time)
+	// user.UpdateDefaultUpdateTime holds the default value on update for the update_time field.
+	user.UpdateDefaultUpdateTime = userDescUpdateTime.UpdateDefault.(func() time.Time)
+}

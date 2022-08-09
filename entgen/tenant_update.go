@@ -125,9 +125,7 @@ func (tu *TenantUpdate) Save(ctx context.Context) (int, error) {
 		err      error
 		affected int
 	)
-	if err := tu.defaults(); err != nil {
-		return 0, err
-	}
+	tu.defaults()
 	if len(tu.hooks) == 0 {
 		if err = tu.check(); err != nil {
 			return 0, err
@@ -183,15 +181,11 @@ func (tu *TenantUpdate) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (tu *TenantUpdate) defaults() error {
+func (tu *TenantUpdate) defaults() {
 	if _, ok := tu.mutation.UpdateTime(); !ok {
-		if tenant.UpdateDefaultUpdateTime == nil {
-			return fmt.Errorf("entgen: uninitialized tenant.UpdateDefaultUpdateTime (forgotten import entgen/runtime?)")
-		}
 		v := tenant.UpdateDefaultUpdateTime()
 		tu.mutation.SetUpdateTime(v)
 	}
-	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -465,9 +459,7 @@ func (tuo *TenantUpdateOne) Save(ctx context.Context) (*Tenant, error) {
 		err  error
 		node *Tenant
 	)
-	if err := tuo.defaults(); err != nil {
-		return nil, err
-	}
+	tuo.defaults()
 	if len(tuo.hooks) == 0 {
 		if err = tuo.check(); err != nil {
 			return nil, err
@@ -529,15 +521,11 @@ func (tuo *TenantUpdateOne) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (tuo *TenantUpdateOne) defaults() error {
+func (tuo *TenantUpdateOne) defaults() {
 	if _, ok := tuo.mutation.UpdateTime(); !ok {
-		if tenant.UpdateDefaultUpdateTime == nil {
-			return fmt.Errorf("entgen: uninitialized tenant.UpdateDefaultUpdateTime (forgotten import entgen/runtime?)")
-		}
 		v := tenant.UpdateDefaultUpdateTime()
 		tuo.mutation.SetUpdateTime(v)
 	}
-	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.

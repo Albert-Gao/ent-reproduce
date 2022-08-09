@@ -103,9 +103,7 @@ func (tc *TenantCreate) Save(ctx context.Context) (*Tenant, error) {
 		err  error
 		node *Tenant
 	)
-	if err := tc.defaults(); err != nil {
-		return nil, err
-	}
+	tc.defaults()
 	if len(tc.hooks) == 0 {
 		if err = tc.check(); err != nil {
 			return nil, err
@@ -170,22 +168,15 @@ func (tc *TenantCreate) ExecX(ctx context.Context) {
 }
 
 // defaults sets the default values of the builder before save.
-func (tc *TenantCreate) defaults() error {
+func (tc *TenantCreate) defaults() {
 	if _, ok := tc.mutation.CreateTime(); !ok {
-		if tenant.DefaultCreateTime == nil {
-			return fmt.Errorf("entgen: uninitialized tenant.DefaultCreateTime (forgotten import entgen/runtime?)")
-		}
 		v := tenant.DefaultCreateTime()
 		tc.mutation.SetCreateTime(v)
 	}
 	if _, ok := tc.mutation.UpdateTime(); !ok {
-		if tenant.DefaultUpdateTime == nil {
-			return fmt.Errorf("entgen: uninitialized tenant.DefaultUpdateTime (forgotten import entgen/runtime?)")
-		}
 		v := tenant.DefaultUpdateTime()
 		tc.mutation.SetUpdateTime(v)
 	}
-	return nil
 }
 
 // check runs all checks and user-defined validators on the builder.
