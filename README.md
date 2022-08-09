@@ -22,7 +22,7 @@ This repo connectes to this [issue](https://github.com/ent/ent/issues/2838)
 1. send a request to `http://localhost:8081/create` for creating the mock data
 1. then try the below 2 queries
 
-> Please update the ID to the data in your database
+   - Please update the ID in the query to the data in your database
 
 **This one works**
 
