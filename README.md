@@ -1,6 +1,6 @@
 # [ent](https://entgo.io/) - reproduce
 
-This repo connectes to this [issue](https://github.com/ent/ent/issues/2827)
+This repo connectes to this [issue](https://github.com/ent/ent/issues/2838)
 
 ## The issue
 
