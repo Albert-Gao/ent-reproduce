@@ -26,7 +26,6 @@ type ProfileQuery struct {
 	order      []OrderFunc
 	fields     []string
 	predicates []predicate.Profile
-	// eager-loading edges.
 	withOwner  *UserQuery
 	withTenant *TenantQuery
 	// intermediate query (i.e. traversal path).
@@ -420,60 +419,72 @@ func (pq *ProfileQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Prof
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-
 	if query := pq.withOwner; query != nil {
-		ids := make([]string, 0, len(nodes))
-		nodeids := make(map[string][]*Profile)
-		for i := range nodes {
-			fk := nodes[i].OwnerID
-			if _, ok := nodeids[fk]; !ok {
-				ids = append(ids, fk)
-			}
-			nodeids[fk] = append(nodeids[fk], nodes[i])
-		}
-		query.Where(user.IDIn(ids...))
-		neighbors, err := query.All(ctx)
-		if err != nil {
+		if err := pq.loadOwner(ctx, query, nodes, nil,
+			func(n *Profile, e *User) { n.Edges.Owner = e }); err != nil {
 			return nil, err
 		}
-		for _, n := range neighbors {
-			nodes, ok := nodeids[n.ID]
-			if !ok {
-				return nil, fmt.Errorf(`unexpected foreign-key "owner_id" returned %v`, n.ID)
-			}
-			for i := range nodes {
-				nodes[i].Edges.Owner = n
-			}
-		}
 	}
-
 	if query := pq.withTenant; query != nil {
-		ids := make([]string, 0, len(nodes))
-		nodeids := make(map[string][]*Profile)
-		for i := range nodes {
-			fk := nodes[i].TenantID
-			if _, ok := nodeids[fk]; !ok {
-				ids = append(ids, fk)
-			}
-			nodeids[fk] = append(nodeids[fk], nodes[i])
-		}
-		query.Where(tenant.IDIn(ids...))
-		neighbors, err := query.All(ctx)
-		if err != nil {
+		if err := pq.loadTenant(ctx, query, nodes, nil,
+			func(n *Profile, e *Tenant) { n.Edges.Tenant = e }); err != nil {
 			return nil, err
 		}
-		for _, n := range neighbors {
-			nodes, ok := nodeids[n.ID]
-			if !ok {
-				return nil, fmt.Errorf(`unexpected foreign-key "tenant_id" returned %v`, n.ID)
-			}
-			for i := range nodes {
-				nodes[i].Edges.Tenant = n
-			}
+	}
+	return nodes, nil
+}
+
+func (pq *ProfileQuery) loadOwner(ctx context.Context, query *UserQuery, nodes []*Profile, init func(*Profile), assign func(*Profile, *User)) error {
+	ids := make([]string, 0, len(nodes))
+	nodeids := make(map[string][]*Profile)
+	for i := range nodes {
+		fk := nodes[i].OwnerID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	query.Where(user.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "owner_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
 		}
 	}
-
-	return nodes, nil
+	return nil
+}
+func (pq *ProfileQuery) loadTenant(ctx context.Context, query *TenantQuery, nodes []*Profile, init func(*Profile), assign func(*Profile, *Tenant)) error {
+	ids := make([]string, 0, len(nodes))
+	nodeids := make(map[string][]*Profile)
+	for i := range nodes {
+		fk := nodes[i].TenantID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	query.Where(tenant.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "tenant_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
 }
 
 func (pq *ProfileQuery) sqlCount(ctx context.Context) (int, error) {

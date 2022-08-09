@@ -21,13 +21,12 @@ import (
 // TenantQuery is the builder for querying Tenant entities.
 type TenantQuery struct {
 	config
-	limit      *int
-	offset     *int
-	unique     *bool
-	order      []OrderFunc
-	fields     []string
-	predicates []predicate.Tenant
-	// eager-loading edges.
+	limit              *int
+	offset             *int
+	unique             *bool
+	order              []OrderFunc
+	fields             []string
+	predicates         []predicate.Tenant
 	withMembers        *UserQuery
 	withMemberProfiles *ProfileQuery
 	// intermediate query (i.e. traversal path).
@@ -421,86 +420,107 @@ func (tq *TenantQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Tenan
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-
 	if query := tq.withMembers; query != nil {
-		edgeids := make([]driver.Value, len(nodes))
-		byid := make(map[string]*Tenant)
-		nids := make(map[string]map[*Tenant]struct{})
-		for i, node := range nodes {
-			edgeids[i] = node.ID
-			byid[node.ID] = node
-			node.Edges.Members = []*User{}
-		}
-		query.Where(func(s *sql.Selector) {
-			joinT := sql.Table(tenant.MembersTable)
-			s.Join(joinT).On(s.C(user.FieldID), joinT.C(tenant.MembersPrimaryKey[0]))
-			s.Where(sql.InValues(joinT.C(tenant.MembersPrimaryKey[1]), edgeids...))
-			columns := s.SelectedColumns()
-			s.Select(joinT.C(tenant.MembersPrimaryKey[1]))
-			s.AppendSelect(columns...)
-			s.SetDistinct(false)
-		})
-		neighbors, err := query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
-			assign := spec.Assign
-			values := spec.ScanValues
-			spec.ScanValues = func(columns []string) ([]interface{}, error) {
-				values, err := values(columns[1:])
-				if err != nil {
-					return nil, err
-				}
-				return append([]interface{}{new(sql.NullString)}, values...), nil
-			}
-			spec.Assign = func(columns []string, values []interface{}) error {
-				outValue := values[0].(*sql.NullString).String
-				inValue := values[1].(*sql.NullString).String
-				if nids[inValue] == nil {
-					nids[inValue] = map[*Tenant]struct{}{byid[outValue]: struct{}{}}
-					return assign(columns[1:], values[1:])
-				}
-				nids[inValue][byid[outValue]] = struct{}{}
-				return nil
-			}
-		})
-		if err != nil {
+		if err := tq.loadMembers(ctx, query, nodes,
+			func(n *Tenant) { n.Edges.Members = []*User{} },
+			func(n *Tenant, e *User) { n.Edges.Members = append(n.Edges.Members, e) }); err != nil {
 			return nil, err
 		}
-		for _, n := range neighbors {
-			nodes, ok := nids[n.ID]
-			if !ok {
-				return nil, fmt.Errorf(`unexpected "members" node returned %v`, n.ID)
-			}
-			for kn := range nodes {
-				kn.Edges.Members = append(kn.Edges.Members, n)
-			}
-		}
 	}
-
 	if query := tq.withMemberProfiles; query != nil {
-		fks := make([]driver.Value, 0, len(nodes))
-		nodeids := make(map[string]*Tenant)
-		for i := range nodes {
-			fks = append(fks, nodes[i].ID)
-			nodeids[nodes[i].ID] = nodes[i]
-			nodes[i].Edges.MemberProfiles = []*Profile{}
-		}
-		query.Where(predicate.Profile(func(s *sql.Selector) {
-			s.Where(sql.InValues(tenant.MemberProfilesColumn, fks...))
-		}))
-		neighbors, err := query.All(ctx)
-		if err != nil {
+		if err := tq.loadMemberProfiles(ctx, query, nodes,
+			func(n *Tenant) { n.Edges.MemberProfiles = []*Profile{} },
+			func(n *Tenant, e *Profile) { n.Edges.MemberProfiles = append(n.Edges.MemberProfiles, e) }); err != nil {
 			return nil, err
 		}
-		for _, n := range neighbors {
-			fk := n.TenantID
-			node, ok := nodeids[fk]
-			if !ok {
-				return nil, fmt.Errorf(`unexpected foreign-key "tenant_id" returned %v for node %v`, fk, n.ID)
-			}
-			node.Edges.MemberProfiles = append(node.Edges.MemberProfiles, n)
+	}
+	return nodes, nil
+}
+
+func (tq *TenantQuery) loadMembers(ctx context.Context, query *UserQuery, nodes []*Tenant, init func(*Tenant), assign func(*Tenant, *User)) error {
+	edgeIDs := make([]driver.Value, len(nodes))
+	byID := make(map[string]*Tenant)
+	nids := make(map[string]map[*Tenant]struct{})
+	for i, node := range nodes {
+		edgeIDs[i] = node.ID
+		byID[node.ID] = node
+		if init != nil {
+			init(node)
 		}
 	}
-
-	return nodes, nil
+	query.Where(func(s *sql.Selector) {
+		joinT := sql.Table(tenant.MembersTable)
+		s.Join(joinT).On(s.C(user.FieldID), joinT.C(tenant.MembersPrimaryKey[0]))
+		s.Where(sql.InValues(joinT.C(tenant.MembersPrimaryKey[1]), edgeIDs...))
+		columns := s.SelectedColumns()
+		s.Select(joinT.C(tenant.MembersPrimaryKey[1]))
+		s.AppendSelect(columns...)
+		s.SetDistinct(false)
+	})
+	if err := query.prepareQuery(ctx); err != nil {
+		return err
+	}
+	neighbors, err := query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
+		assign := spec.Assign
+		values := spec.ScanValues
+		spec.ScanValues = func(columns []string) ([]interface{}, error) {
+			values, err := values(columns[1:])
+			if err != nil {
+				return nil, err
+			}
+			return append([]interface{}{new(sql.NullString)}, values...), nil
+		}
+		spec.Assign = func(columns []string, values []interface{}) error {
+			outValue := values[0].(*sql.NullString).String
+			inValue := values[1].(*sql.NullString).String
+			if nids[inValue] == nil {
+				nids[inValue] = map[*Tenant]struct{}{byID[outValue]: struct{}{}}
+				return assign(columns[1:], values[1:])
+			}
+			nids[inValue][byID[outValue]] = struct{}{}
+			return nil
+		}
+	})
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected "members" node returned %v`, n.ID)
+		}
+		for kn := range nodes {
+			assign(kn, n)
+		}
+	}
+	return nil
+}
+func (tq *TenantQuery) loadMemberProfiles(ctx context.Context, query *ProfileQuery, nodes []*Tenant, init func(*Tenant), assign func(*Tenant, *Profile)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[string]*Tenant)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.Where(predicate.Profile(func(s *sql.Selector) {
+		s.Where(sql.InValues(tenant.MemberProfilesColumn, fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.TenantID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "tenant_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
 }
 
 func (tq *TenantQuery) sqlCount(ctx context.Context) (int, error) {

@@ -49,8 +49,7 @@ type ProfileEdges struct {
 func (e ProfileEdges) OwnerOrErr() (*User, error) {
 	if e.loadedTypes[0] {
 		if e.Owner == nil {
-			// The edge owner was loaded in eager-loading,
-			// but was not found.
+			// Edge was loaded but was not found.
 			return nil, &NotFoundError{label: user.Label}
 		}
 		return e.Owner, nil
@@ -63,8 +62,7 @@ func (e ProfileEdges) OwnerOrErr() (*User, error) {
 func (e ProfileEdges) TenantOrErr() (*Tenant, error) {
 	if e.loadedTypes[1] {
 		if e.Tenant == nil {
-			// The edge tenant was loaded in eager-loading,
-			// but was not found.
+			// Edge was loaded but was not found.
 			return nil, &NotFoundError{label: tenant.Label}
 		}
 		return e.Tenant, nil
